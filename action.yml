@@ -1,17 +1,13 @@
-name: 'Move to next iteration'
-description: 'Automatically move issues to the next iteration.'
-author: 'Baptiste Lombard'
+name: "Move to next iteration"
+description: "Automatically move issues to the next iteration."
+author: "Baptiste Lombard"
 branding:
-  icon: 'calendar'
-  color: 'blue'
+  icon: "calendar"
+  color: "blue"
 inputs:
   owner:
     description: The account name of the GitHub organization.
     required: true
-  repo-token:
-    description: 'A token for the repo'
-    default: ${{ github.token }}
-    required: false
   number:
     description: Project number as you see it in the URL of the project.
     required: true
@@ -25,5 +21,5 @@ inputs:
     description: Should be current or next.
     required: true
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: "node16"
+  main: "dist/index.js"
