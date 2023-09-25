@@ -8,6 +8,10 @@ inputs:
   owner:
     description: The account name of the GitHub organization.
     required: true
+  repo-token:
+    description: 'A token for the repo'
+    default: ${{ github.token }}
+    required: false
   number:
     description: Project number as you see it in the URL of the project.
     required: true
@@ -17,14 +21,8 @@ inputs:
   iteration-field:
     description: The name of your iteration field.
     required: true
-  iteration:
-    description: Should be last or current.
-    required: true
   new-iteration:
     description: Should be current or next.
-    required: true
-  statuses:
-    description: Statuses of the issues to move to the next iteration.
     required: true
 runs:
   using: 'node16'
