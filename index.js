@@ -6,7 +6,7 @@ const run = async () => {
   try {
     const owner = core.getInput("owner");
     const number = Number(core.getInput("number"));
-    const token = core.getInput("token");
+    // const token = core.getInput("token");
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
