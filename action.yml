@@ -5,6 +5,10 @@ branding:
   icon: "calendar"
   color: "blue"
 inputs:
+  repo-token:
+    description: "A token for the repo"
+    default: ${{ github.token }}
+    required: false
   owner:
     description: The account name of the GitHub organization.
     required: true

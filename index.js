@@ -4,12 +4,14 @@ import GitHubProject from "github-project";
 
 const run = async () => {
   try {
+    const repoToken = core.getInput("repo-token");
     const owner = core.getInput("owner");
     const number = Number(core.getInput("number"));
     // const token = core.getInput("token");
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
+    const client = github.getOctokit(repoToken);
     const { pull_request: event } = github.context.payload;
     const { node_id } = event;
     core.info(node_id);
