@@ -11061,20 +11061,11 @@ function projectFieldsNodesToFieldsMap(state, project, nodes) {
 
       // If the field is of type "Iteration", then the `configuration` property will be set.
       if (node.configuration) {
-        acc[userInternalFieldName].optionsById = node.configuration.iterations.concat(node.configuration.completedIterations).reduce(
+        acc[userInternalFieldName].optionsByValue = node.configuration.iterations.reduce(
           (acc, option) => {
             return {
               ...acc,
-              [option.id]: option.title,
-            };
-          },
-          {}
-        );
-        acc[userInternalFieldName].optionsByValue = node.configuration.iterations.concat(node.configuration.completedIterations).reduce(
-          (acc, option) => {
-            return {
-              ...acc,
-              [option.title]: option.id,
+              [option.title]: {...option},
             };
           },
           {}
@@ -11336,15 +11327,6 @@ async function getStateWithProjectFields(project, state) {
     number: project.number,
   });
 
-  if (
-    response.userOrOrganization === null ||
-    response.userOrOrganization.projectV2 === null
-  ) {
-    throw new Error(
-      `[github-project] Cannot find project with number: ${project.number} and owner: ${project.owner}`
-    );
-  }
-
   const {
     userOrOrganization: { projectV2 },
   } = response;
@@ -11408,10 +11390,13 @@ const READ_ONLY_FIELDS = [
  * @returns {{query: string, fields: Record<string, string>}}
  */
 function getFieldsUpdateQueryAndFields(state, fields) {
+  // When updating fields convert empty strings to null to ensure that the field's value
+  // is correctly unset. This is important for date fields, which fail validation if
+  // an empty string is passed.
   const existingFields = Object.fromEntries(
     Object.keys(fields)
       .filter((key) => state.fields[key].existsInProject)
-      .map((key) => [key, fields[key]])
+      .map((key) => [key, fields[key] === "" ? null : fields[key]])
   );
 
   const readOnlyFields = Object.keys(existingFields)
@@ -11442,7 +11427,7 @@ function getFieldsUpdateQueryAndFields(state, fields) {
     .map(([key, value], index) => {
       if (value === undefined) return;
       const field = state.fields[key];
-      const alias = key.replace(/\s+/g, "");
+      const alias = key.replace(/[^\w\d]/g, "");
       // @ts-expect-error - `field.id` is not set if field does not exist on projects, but we know it exists here
       const fieldId = field.id;
       // only retrieve the updated node once
@@ -12241,6 +12226,7 @@ function projectNodeToProperties(state) {
     id: state.id,
     title: state.title,
     url: state.url,
+    fields: state.fields
   };
 }
 
@@ -12261,7 +12247,7 @@ function projectNodeToProperties(state) {
 async function getProperties(project, state) {
   const stateWithFields = await getStateWithProjectFields(project, state);
 
-  return projectNodeToProperties(stateWithFields);
+  return projectNodeToProperties(stateWithFields); 
 }
 
 ;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/default-match-function.js
@@ -12403,17 +12389,23 @@ const run = async () => {
     });
 
     const projectData = await project.getProperties();
-    core.info(JSON.stringify(projectData));
+    const iterations = projectData.fields.iteration.optionsByValue;
 
-    const currentIteration =
-      projectData.fields.iteration.configuration.iterations[0];
-    const nextIteration =
-      projectData.fields.iteration.configuration.iterations[1];
+    const iterationTitles = Object.keys(iterations);
+    const currentIterationTitle = iterationTitles.reduce((a, b) =>
+      a < b ? a : b
+    );
 
-    const newIteration =
-      newiterationType === "current" ? currentIteration : nextIteration;
+    const nextIterationTitle = iterationTitles
+      .filter((i) => i !== currentIterationTitle)
+      .reduce((a, b) => (a < b ? a : b));
 
-    await project.items.add(node_id, { iteration: newIteration.title });
+    const iterationTitle =
+      newiterationType === "current"
+        ? currentIterationTitle
+        : nextIterationTitle;
+
+    await project.items.add(node_id, { iteration: iterationTitle });
   } catch (error) {
     core.setFailed(error.message);
   }

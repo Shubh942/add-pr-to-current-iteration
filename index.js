@@ -20,17 +20,23 @@ const run = async () => {
     });
 
     const projectData = await project.getProperties();
-    core.info(JSON.stringify(projectData));
+    const iterations = projectData.fields.iteration.optionsByValue;
 
-    const currentIteration =
-      projectData.fields.iteration.configuration.iterations[0];
-    const nextIteration =
-      projectData.fields.iteration.configuration.iterations[1];
+    const iterationTitles = Object.keys(iterations);
+    const currentIterationTitle = iterationTitles.reduce((a, b) =>
+      a < b ? a : b
+    );
 
-    const newIteration =
-      newiterationType === "current" ? currentIteration : nextIteration;
+    const nextIterationTitle = iterationTitles
+      .filter((i) => i !== currentIterationTitle)
+      .reduce((a, b) => (a < b ? a : b));
 
-    await project.items.add(node_id, { iteration: newIteration.title });
+    const iterationTitle =
+      newiterationType === "current"
+        ? currentIterationTitle
+        : nextIterationTitle;
+
+    await project.items.add(node_id, { iteration: iterationTitle });
   } catch (error) {
     core.setFailed(error.message);
   }
