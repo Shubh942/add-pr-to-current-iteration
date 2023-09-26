@@ -12402,7 +12402,7 @@ const run = async () => {
       fields: { iteration: iterationField },
     });
 
-    const projectData = await project.get();
+    const projectData = await project.fields();
     core.info(JSON.stringify(projectData));
 
     const currentIteration =
