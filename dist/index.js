@@ -12403,6 +12403,7 @@ const run = async () => {
     });
 
     const projectData = await project.getProperties();
+    core.info(JSON.stringify(projectData));
 
     const currentIteration =
       projectData.fields.iteration.configuration.iterations[0];
