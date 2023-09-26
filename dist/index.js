@@ -11739,15 +11739,15 @@ function handleNotFoundGraphqlError(error) {
  */
 async function getItem(project, state, itemId) {
   const stateWithFields = await getStateWithProjectFields(project, state);
-  console.log(stateWithFields)
-
-
+  
+  
   const result = await project.octokit
-    .graphql(getItemQuery, {
-      id: itemId,
-    })
-    .catch(handleNotFoundGraphqlError);
-
+  .graphql(getItemQuery, {
+    id: itemId,
+  })
+  .catch(handleNotFoundGraphqlError);
+  
+  console.log(result, itemId)
   if (!result?.node.id) return;
 
   return projectItemNodeToGitHubProjectItem(stateWithFields, result.node);
@@ -12383,6 +12383,7 @@ const run = async () => {
 
     const { pull_request: event } = github.context.payload;
     const { node_id } = event;
+    core.info(JSON.stringify(event));
     core.info(node_id);
     const project = new GitHubProject({
       owner,
