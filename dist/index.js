@@ -12293,18 +12293,19 @@ const run = async () => {
 
     const {
       pull_request: event,
-      repository: { name },
+      repository: { html_url },
     } = github.context.payload;
     const { number: prNumber } = event;
     const octokit = github.getOctokit(token);
 
+    core.info(html_url, prNumber);
     const { data: pullRequest } = await octokit.rest.pulls.get({
       owner,
-      repo: name,
+      repo: html_url,
       pull_number: prNumber,
     });
 
-    console.log(pullRequest);
+    core.info(JSON.stringify(pullRequest));
     throw "s";
 
     const project = new GitHubProject({
