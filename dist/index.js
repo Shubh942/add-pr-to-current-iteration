@@ -11145,7 +11145,6 @@ function projectFieldValueNodeToValue(projectField, node) {
  */
 function projectItemNodeToGitHubProjectItem(state, itemNode) {
   const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues.nodes);
-
   const common = {
     type: itemNode.type,
     id: itemNode.id,
@@ -11153,39 +11152,39 @@ function projectItemNodeToGitHubProjectItem(state, itemNode) {
     fields,
   };
 
-  if (itemNode.type === "DRAFT_ISSUE") {
-    return {
-      ...common,
-      content: {
-        id: itemNode.content.id,
-        title: itemNode.content.title,
-        createdAt: itemNode.content.createdAt,
-        assignees: itemNode.content.assignees.nodes.map((node) => node.login),
-      },
-    };
-  }
+  // if (itemNode.type === "DRAFT_ISSUE") {
+  //   return {
+  //     ...common,
+  //     content: {
+  //       id: itemNode.content.id,
+  //       title: itemNode.content.title,
+  //       createdAt: itemNode.content.createdAt,
+  //       assignees: itemNode.content.assignees.nodes.map((node) => node.login),
+  //     },
+  //   };
+  // }
 
-  if (itemNode.type === "ISSUE" || itemNode.type === "PULL_REQUEST") {
+  if (itemNode.type === "PULL_REQUEST") {
     // item is issue or pull request
     const issue = {
-      id: itemNode.content.id,
-      number: itemNode.content.number,
-      createdAt: itemNode.content.createdAt,
-      closed: itemNode.content.closed,
-      closedAt: itemNode.content.closedAt,
-      assignees: itemNode.content.assignees.nodes.map((node) => node.login),
-      labels: itemNode.content.labels.nodes.map((node) => node.name),
-      repository: itemNode.content.repository.name,
-      milestone: itemNode.content.milestone,
-      title: itemNode.content.title,
-      url: itemNode.content.url,
-      databaseId: itemNode.content.databaseId,
+      id: itemNode.content?.id,
+      number: itemNode.content?.number,
+      createdAt: itemNode.content?.createdAt,
+      closed: itemNode.content?.closed,
+      closedAt: itemNode.content?.closedAt,
+      assignees: itemNode.content?.assignees.nodes.map((node) => node.login),
+      labels: itemNode.content?.labels.nodes.map((node) => node.name),
+      repository: itemNode.content?.repository.name,
+      milestone: itemNode.content?.milestone,
+      title: itemNode.content?.title,
+      url: itemNode.content?.url,
+      databaseId: itemNode.content?.databaseId,
     };
 
     const content =
       itemNode.type === "ISSUE"
         ? issue
-        : { ...issue, merged: itemNode.content.merged };
+        : { ...issue, merged: itemNode.content?.merged };
 
     return {
       ...common,
@@ -11225,6 +11224,7 @@ async function listItems(project, state) {
     owner: project.owner,
     number: project.number,
   });
+
 
   const fields = projectFieldsNodesToFieldsMap(
     state,
@@ -11299,7 +11299,10 @@ async function fetchProjectItems(
     });
   }
 
-  return results;
+  const a = results.filter(r => r.type === 'PULL_REQUEST' && r.fields.status != 'Done')
+  console.log(a)
+ 
+  return a;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/get-state-with-project-fields.js
@@ -12381,10 +12384,11 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
-    const { pull_request: event } = github.context.payload;
-    const { node_id } = event;
-    core.info(JSON.stringify(event));
-    core.info(node_id);
+    const p = github.context.payload;
+    // const { node_id } = event;
+    core.info(JSON.stringify(p));
+    // core.info(node_id);
+    throw "a";
     const project = new GitHubProject({
       owner,
       number,

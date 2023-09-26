@@ -10,10 +10,11 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
-    const { pull_request: event } = github.context.payload;
-    const { node_id } = event;
-    core.info(JSON.stringify(event));
-    core.info(node_id);
+    const p = github.context.payload;
+    // const { node_id } = event;
+    core.info(JSON.stringify(p));
+    // core.info(node_id);
+    throw "a";
     const project = new GitHubProject({
       owner,
       number,
