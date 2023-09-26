@@ -12,6 +12,7 @@ const run = async () => {
 
     const { pull_request: event } = github.context.payload;
     const { node_id } = event;
+    core.info(node_id);
     const project = new GitHubProject({
       owner,
       number,
