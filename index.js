@@ -16,7 +16,7 @@ const run = async () => {
       owner,
       number,
       token,
-      fields: { iteration: iterationField },
+      // fields: { iteration: iterationField },
     });
 
     const projectData = await project.getProperties();
