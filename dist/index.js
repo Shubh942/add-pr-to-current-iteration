@@ -10726,54 +10726,8 @@ const queryItemFieldNodes = `
   createdAt
   type
   isArchived
-  ${queryContentNode}
-  fieldValues(first: 20) {
-    nodes {
-      __typename
-      ... on ProjectV2ItemFieldDateValue {
-        date
-        field {
-          ... on ProjectV2Field {
-            id
-          }
-        }
-      }
-      ... on ProjectV2ItemFieldIterationValue {
-        title
-        iterationId
-        startDate
-        duration
-        field {
-          ... on ProjectV2IterationField {
-            id
-          }
-        }
-      }
-      ... on ProjectV2ItemFieldNumberValue {
-        number
-        field {
-          ... on ProjectV2Field {
-            id
-          }
-        }
-      }
-      ... on ProjectV2ItemFieldSingleSelectValue {
-        optionId
-        field {
-          ... on ProjectV2SingleSelectField {
-            id
-          }
-        }
-      }
-      ... on ProjectV2ItemFieldTextValue {
-        text
-        field {
-          ... on ProjectV2Field {
-            id
-          }
-        }
-      }
-    }
+  content {
+      baseRefName
   }
 `;
 
@@ -11078,59 +11032,7 @@ function projectFieldsNodesToFieldsMap(state, project, nodes) {
   );
 }
 
-;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/item-fields-nodes-to-fields-map.js
-/**
- * Take GraphQL project item fieldValues nodes and turn them into
- * an object using the user-defined field names.
- *
- * @param {import("../..").GitHubProjectStateWithFields} state
- * @param {import("../..").ProjectFieldValueNode[]} nodes
- *
- * @returns {Record<keyof import("../..").BUILT_IN_FIELDS, string> & Record<string, string>}
- */
-function itemFieldsNodesToFieldsMap(state, nodes) {
-  return Object.entries(state.fields).reduce(
-    (acc, [projectFieldName, projectField]) => {
-      // don't set optional fields on items that don't exist in project
-      if (projectField.existsInProject === false) return acc;
-
-      const node = nodes.find((node) => node.field?.id === projectField.id);
-      const value = projectFieldValueNodeToValue(projectField, node);
-
-      return {
-        ...acc,
-        [projectFieldName]: value,
-      };
-    },
-    {}
-  );
-}
-
-/**
- * @param {import("../..").ProjectField} projectField
- * @param {import("../..").ProjectFieldValueNode} node
- * @returns {string}
- */
-function projectFieldValueNodeToValue(projectField, node) {
-  if (!node) return null;
-
-  switch (node.__typename) {
-    case "ProjectV2ItemFieldDateValue":
-      return node.date;
-    case "ProjectV2ItemFieldNumberValue":
-      // we currently only work with strings
-      return String(node.number);
-    case "ProjectV2ItemFieldSingleSelectValue":
-      return projectField.optionsById[node.optionId];
-    case "ProjectV2ItemFieldTextValue":
-      return node.text;
-      case "ProjectV2ItemFieldIterationValue":
-      return node.title;
-  }
-}
-
 ;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/project-item-node-to-github-project-item.js
-// @ts-check
 
 
 
@@ -11144,13 +11046,16 @@ function projectFieldValueNodeToValue(projectField, node) {
  * @returns {import("../..").GitHubProjectItem}
  */
 function projectItemNodeToGitHubProjectItem(state, itemNode) {
-  const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues.nodes);
+  if(itemNode.id != 'PVTI_lADOA3S3ec4AQsryzgJZ9Xk') {return {}}
+  // const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues.nodes);
   const common = {
     type: itemNode.type,
     id: itemNode.id,
     isArchived: itemNode.isArchived,
-    fields,
+    // fields,
   };
+
+  console.log(itemNode)
 
   // if (itemNode.type === "DRAFT_ISSUE") {
   //   return {
@@ -11255,8 +11160,8 @@ async function listItems(project, state) {
     url,
     fields,
   });
-
-  return items;
+  const a = items.filter(r => r.type === 'PULL_REQUEST' && r.fields?.status != 'Done' && r.fields.iteration === 'Iteration 12')
+  return a;
 }
 
 /**
@@ -11299,10 +11204,9 @@ async function fetchProjectItems(
     });
   }
 
-  const a = results.filter(r => r.type === 'PULL_REQUEST' && r.fields.status != 'Done')
-  console.log(a)
+
  
-  return a;
+  return results;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/get-state-with-project-fields.js
@@ -11820,6 +11724,7 @@ async function getItemByContentRepositoryAndNumber(
   issueOrPullRequestNumber
 ) {
   const stateWithFields = await getStateWithProjectFields(project, state);
+  console.log(project.owner,repositoryName,issueOrPullRequestNumber)
 
   const result = await project.octokit
     .graphql(getItemByContentRepositoryAndNameQuery, {
@@ -11828,6 +11733,8 @@ async function getItemByContentRepositoryAndNumber(
       number: issueOrPullRequestNumber,
     })
     .catch(handleNotFoundGraphqlError);
+
+
 
   const node =
     result?.repositoryOwner.repository.issueOrPullRequest.projectItems.nodes.find(
@@ -12384,11 +12291,22 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
-    const p = github.context.payload;
-    // const { node_id } = event;
-    core.info(JSON.stringify(p));
-    // core.info(node_id);
-    throw "a";
+    const {
+      pull_request: event,
+      repository: { name },
+    } = github.context.payload;
+    const { number: prNumber } = event;
+    const octokit = github.getOctokit(token);
+
+    const { data: pullRequest } = await octokit.rest.pulls.get({
+      owner,
+      repo: name,
+      pull_number: prNumber,
+    });
+
+    console.log(pullRequest);
+    throw "s";
+
     const project = new GitHubProject({
       owner,
       number,
