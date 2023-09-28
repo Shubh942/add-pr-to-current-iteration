@@ -11498,7 +11498,7 @@ function getFieldsUpdateQueryAndFields(state, fields) {
  */
 function toItemFieldValueInput(field, valueOrOption) {
   const value =
-    typeof valueOrOption === "string" ? valueOrOption : valueOrOption.id;
+    typeof valueOrOption === "string" ? valueOrOption : valueOrOption.id.id;
 
   const valueKey =
     {
@@ -11512,7 +11512,7 @@ function toItemFieldValueInput(field, valueOrOption) {
     return `value: {number: ${parseFloat(value)}}`;
   }
 
-  return `value: {${valueKey}: "${escapeQuotes(value.id.id)}"}`;
+  return `value: {${valueKey}: "${escapeQuotes(value)}"}`;
 }
 
 function escapeQuotes(str) {
