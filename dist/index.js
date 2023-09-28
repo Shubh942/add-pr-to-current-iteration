@@ -10727,6 +10727,54 @@ const queryItemFieldNodes = `
   type
   isArchived
   ${queryContentNode}
+  fieldValues(first: 20) {
+    nodes {
+      __typename
+      ... on ProjectV2ItemFieldDateValue {
+        date
+        field {
+          ... on ProjectV2Field {
+            id
+          }
+        }
+      }
+      ... on ProjectV2ItemFieldIterationValue {
+        title
+        iterationId
+        startDate
+        duration
+        field {
+          ... on ProjectV2IterationField {
+            id
+          }
+        }
+      }
+      ... on ProjectV2ItemFieldNumberValue {
+        number
+        field {
+          ... on ProjectV2Field {
+            id
+          }
+        }
+      }
+      ... on ProjectV2ItemFieldSingleSelectValue {
+        optionId
+        field {
+          ... on ProjectV2SingleSelectField {
+            id
+          }
+        }
+      }
+      ... on ProjectV2ItemFieldTextValue {
+        text
+        field {
+          ... on ProjectV2Field {
+            id
+          }
+        }
+      }
+    }
+  }
 `;
 
 const getProjectWithItemsQuery = `
@@ -11030,7 +11078,59 @@ function projectFieldsNodesToFieldsMap(state, project, nodes) {
   );
 }
 
+;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/item-fields-nodes-to-fields-map.js
+/**
+ * Take GraphQL project item fieldValues nodes and turn them into
+ * an object using the user-defined field names.
+ *
+ * @param {import("../..").GitHubProjectStateWithFields} state
+ * @param {import("../..").ProjectFieldValueNode[]} nodes
+ *
+ * @returns {Record<keyof import("../..").BUILT_IN_FIELDS, string> & Record<string, string>}
+ */
+function itemFieldsNodesToFieldsMap(state, nodes) {
+  return Object.entries(state.fields).reduce(
+    (acc, [projectFieldName, projectField]) => {
+      // don't set optional fields on items that don't exist in project
+      if (projectField.existsInProject === false) return acc;
+
+      const node = nodes.find((node) => node.field?.id === projectField.id);
+      const value = projectFieldValueNodeToValue(projectField, node);
+
+      return {
+        ...acc,
+        [projectFieldName]: value,
+      };
+    },
+    {}
+  );
+}
+
+/**
+ * @param {import("../..").ProjectField} projectField
+ * @param {import("../..").ProjectFieldValueNode} node
+ * @returns {string}
+ */
+function projectFieldValueNodeToValue(projectField, node) {
+  if (!node) return null;
+
+  switch (node.__typename) {
+    case "ProjectV2ItemFieldDateValue":
+      return node.date;
+    case "ProjectV2ItemFieldNumberValue":
+      // we currently only work with strings
+      return String(node.number);
+    case "ProjectV2ItemFieldSingleSelectValue":
+      return projectField.optionsById[node.optionId];
+    case "ProjectV2ItemFieldTextValue":
+      return node.text;
+      case "ProjectV2ItemFieldIterationValue":
+      return node.title;
+  }
+}
+
 ;// CONCATENATED MODULE: ./node_modules/github-project/api/lib/project-item-node-to-github-project-item.js
+// @ts-check
 
 
 
@@ -11044,15 +11144,14 @@ function projectFieldsNodesToFieldsMap(state, project, nodes) {
  * @returns {import("../..").GitHubProjectItem}
  */
 function projectItemNodeToGitHubProjectItem(state, itemNode) {
-  // const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues?.nodes);
+  const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues.nodes);
+
   const common = {
     type: itemNode.type,
     id: itemNode.id,
     isArchived: itemNode.isArchived,
-    // fields,
+    fields,
   };
-
-  console.log('itemNode', itemNode.content.number)
 
   if (itemNode.type === "DRAFT_ISSUE") {
     return {
@@ -11066,27 +11165,27 @@ function projectItemNodeToGitHubProjectItem(state, itemNode) {
     };
   }
 
-  if (itemNode.type === "PULL_REQUEST") {
+  if (itemNode.type === "ISSUE" || itemNode.type === "PULL_REQUEST") {
     // item is issue or pull request
     const issue = {
-      id: itemNode.content?.id,
-      number: itemNode.content?.number,
-      createdAt: itemNode.content?.createdAt,
-      closed: itemNode.content?.closed,
-      closedAt: itemNode.content?.closedAt,
-      assignees: itemNode.content?.assignees.nodes.map((node) => node.login),
-      labels: itemNode.content?.labels.nodes.map((node) => node.name),
-      repository: itemNode.content?.repository.name,
-      milestone: itemNode.content?.milestone,
-      title: itemNode.content?.title,
-      url: itemNode.content?.url,
-      databaseId: itemNode.content?.databaseId,
+      id: itemNode.content.id,
+      number: itemNode.content.number,
+      createdAt: itemNode.content.createdAt,
+      closed: itemNode.content.closed,
+      closedAt: itemNode.content.closedAt,
+      assignees: itemNode.content.assignees.nodes.map((node) => node.login),
+      labels: itemNode.content.labels.nodes.map((node) => node.name),
+      repository: itemNode.content.repository.name,
+      milestone: itemNode.content.milestone,
+      title: itemNode.content.title,
+      url: itemNode.content.url,
+      databaseId: itemNode.content.databaseId,
     };
 
     const content =
       itemNode.type === "ISSUE"
         ? issue
-        : { ...issue, merged: itemNode.content?.merged };
+        : { ...issue, merged: itemNode.content.merged };
 
     return {
       ...common,
@@ -11100,7 +11199,7 @@ function projectItemNodeToGitHubProjectItem(state, itemNode) {
     type: itemNode.type,
     id: itemNode.id,
     isArchived: itemNode.isArchived,
-    // fields,
+    fields,
     content: {},
   };
 }
@@ -11126,7 +11225,6 @@ async function listItems(project, state) {
     owner: project.owner,
     number: project.number,
   });
-
 
   const fields = projectFieldsNodesToFieldsMap(
     state,
@@ -11157,8 +11255,8 @@ async function listItems(project, state) {
     url,
     fields,
   });
-  const a = items.filter(r => r.type === 'PULL_REQUEST' && r.fields?.status != 'Done')
-  return a;
+
+  return items;
 }
 
 /**
@@ -11201,8 +11299,6 @@ async function fetchProjectItems(
     });
   }
 
-
- 
   return results;
 }
 
@@ -11354,25 +11450,17 @@ function getFieldsUpdateQueryAndFields(state, fields) {
           value: null,
         };
       } else {
-        console.log(fieldId, field)
         const valueOrOption =
           "optionsByValue" in field
             ? findFieldOptionIdAndValue(state, field, value)
             : value;
-
-            console.log(toItemFieldValueInput(
-              field,
-              valueOrOption
-            ))
 
         const query = `
           ${alias}: updateProjectV2ItemFieldValue(input: {projectId: $projectId, itemId: $itemId, fieldId: "${fieldId}", ${toItemFieldValueInput(
           field,
           valueOrOption
         )}}) {
-            projectV2Item {
-              id
-            }
+            ${queryNodes}
           }
         `;
 
@@ -11405,14 +11493,12 @@ function getFieldsUpdateQueryAndFields(state, fields) {
 
 /**
  * @param {import("../..").ProjectField} field
- * 
  *
  * @returns {string}
  */
 function toItemFieldValueInput(field, valueOrOption) {
-  console.log(valueOrOption)
   const value =
-    typeof valueOrOption === "string" ? valueOrOption : valueOrOption;
+    typeof valueOrOption === "string" ? valueOrOption : valueOrOption.id;
 
   const valueKey =
     {
@@ -11583,7 +11669,6 @@ async function addItem(project, state, contentNodeId, fields) {
   });
 
   const newItem = projectItemNodeToGitHubProjectItem(stateWithFields, item);
-  console.log('here1')
 
   if (!fields) return newItem;
 
@@ -11593,7 +11678,6 @@ async function addItem(project, state, contentNodeId, fields) {
   const existingProjectFieldKeys = Object.keys(fields).filter(
     (key) => !nonExistingProjectFields.includes(key)
   );
-  console.log('here2')
 
   if (existingProjectFieldKeys.length === 0)
     return {
@@ -11605,11 +11689,8 @@ async function addItem(project, state, contentNodeId, fields) {
   const existingFields = Object.fromEntries(
     existingProjectFieldKeys.map((key) => [key, fields[key]])
   );
-  console.log('here3')
-  
-  const result = getFieldsUpdateQueryAndFields(stateWithFields, existingFields);
-  // console.log(result.query)
 
+  const result = getFieldsUpdateQueryAndFields(stateWithFields, existingFields);
 
   await project.octokit.graphql(result.query, {
     projectId: stateWithFields.id,
@@ -11657,15 +11738,13 @@ function handleNotFoundGraphqlError(error) {
  */
 async function getItem(project, state, itemId) {
   const stateWithFields = await getStateWithProjectFields(project, state);
-  
-  
+
   const result = await project.octokit
-  .graphql(getItemQuery, {
-    id: itemId,
-  })
-  .catch(handleNotFoundGraphqlError);
-  
-  console.log(result, itemId)
+    .graphql(getItemQuery, {
+      id: itemId,
+    })
+    .catch(handleNotFoundGraphqlError);
+
   if (!result?.node.id) return;
 
   return projectItemNodeToGitHubProjectItem(stateWithFields, result.node);
@@ -11735,7 +11814,6 @@ async function getItemByContentRepositoryAndNumber(
   issueOrPullRequestNumber
 ) {
   const stateWithFields = await getStateWithProjectFields(project, state);
-  console.log(project.owner,repositoryName,issueOrPullRequestNumber)
 
   const result = await project.octokit
     .graphql(getItemByContentRepositoryAndNameQuery, {
@@ -11744,8 +11822,6 @@ async function getItemByContentRepositoryAndNumber(
       number: issueOrPullRequestNumber,
     })
     .catch(handleNotFoundGraphqlError);
-
-
 
   const node =
     result?.repositoryOwner.repository.issueOrPullRequest.projectItems.nodes.find(
