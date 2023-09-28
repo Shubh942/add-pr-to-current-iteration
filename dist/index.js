@@ -10726,9 +10726,7 @@ const queryItemFieldNodes = `
   createdAt
   type
   isArchived
-  content {
-      baseRefName
-  }
+  ${queryContentNode}
 `;
 
 const getProjectWithItemsQuery = `
@@ -11046,8 +11044,7 @@ function projectFieldsNodesToFieldsMap(state, project, nodes) {
  * @returns {import("../..").GitHubProjectItem}
  */
 function projectItemNodeToGitHubProjectItem(state, itemNode) {
-  if(itemNode.id != 'PVTI_lADOA3S3ec4AQsryzgJZ9Xk') {return {}}
-  // const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues.nodes);
+  // const fields = itemFieldsNodesToFieldsMap(state, itemNode.fieldValues?.nodes);
   const common = {
     type: itemNode.type,
     id: itemNode.id,
@@ -11055,19 +11052,19 @@ function projectItemNodeToGitHubProjectItem(state, itemNode) {
     // fields,
   };
 
-  console.log(itemNode)
+  console.log('itemNode', itemNode.content.number)
 
-  // if (itemNode.type === "DRAFT_ISSUE") {
-  //   return {
-  //     ...common,
-  //     content: {
-  //       id: itemNode.content.id,
-  //       title: itemNode.content.title,
-  //       createdAt: itemNode.content.createdAt,
-  //       assignees: itemNode.content.assignees.nodes.map((node) => node.login),
-  //     },
-  //   };
-  // }
+  if (itemNode.type === "DRAFT_ISSUE") {
+    return {
+      ...common,
+      content: {
+        id: itemNode.content.id,
+        title: itemNode.content.title,
+        createdAt: itemNode.content.createdAt,
+        assignees: itemNode.content.assignees.nodes.map((node) => node.login),
+      },
+    };
+  }
 
   if (itemNode.type === "PULL_REQUEST") {
     // item is issue or pull request
@@ -11103,7 +11100,7 @@ function projectItemNodeToGitHubProjectItem(state, itemNode) {
     type: itemNode.type,
     id: itemNode.id,
     isArchived: itemNode.isArchived,
-    fields,
+    // fields,
     content: {},
   };
 }
@@ -11160,7 +11157,7 @@ async function listItems(project, state) {
     url,
     fields,
   });
-  const a = items.filter(r => r.type === 'PULL_REQUEST' && r.fields?.status != 'Done' && r.fields.iteration === 'Iteration 12')
+  const a = items.filter(r => r.type === 'PULL_REQUEST' && r.fields?.status != 'Done')
   return a;
 }
 
@@ -11357,17 +11354,25 @@ function getFieldsUpdateQueryAndFields(state, fields) {
           value: null,
         };
       } else {
+        console.log(fieldId, field)
         const valueOrOption =
           "optionsByValue" in field
             ? findFieldOptionIdAndValue(state, field, value)
             : value;
+
+            console.log(toItemFieldValueInput(
+              field,
+              valueOrOption
+            ))
 
         const query = `
           ${alias}: updateProjectV2ItemFieldValue(input: {projectId: $projectId, itemId: $itemId, fieldId: "${fieldId}", ${toItemFieldValueInput(
           field,
           valueOrOption
         )}}) {
-            ${queryNodes}
+            projectV2Item {
+              id
+            }
           }
         `;
 
@@ -11400,13 +11405,14 @@ function getFieldsUpdateQueryAndFields(state, fields) {
 
 /**
  * @param {import("../..").ProjectField} field
- * @param {string | {id: string, value: string | undefined}} valueOrOption
+ * 
  *
  * @returns {string}
  */
 function toItemFieldValueInput(field, valueOrOption) {
+  console.log(valueOrOption)
   const value =
-    typeof valueOrOption === "string" ? valueOrOption : valueOrOption.id;
+    typeof valueOrOption === "string" ? valueOrOption : valueOrOption;
 
   const valueKey =
     {
@@ -11420,7 +11426,7 @@ function toItemFieldValueInput(field, valueOrOption) {
     return `value: {number: ${parseFloat(value)}}`;
   }
 
-  return `value: {${valueKey}: "${escapeQuotes(value)}"}`;
+  return `value: {${valueKey}: "${escapeQuotes(value.id.id)}"}`;
 }
 
 function escapeQuotes(str) {
@@ -11577,6 +11583,7 @@ async function addItem(project, state, contentNodeId, fields) {
   });
 
   const newItem = projectItemNodeToGitHubProjectItem(stateWithFields, item);
+  console.log('here1')
 
   if (!fields) return newItem;
 
@@ -11586,6 +11593,7 @@ async function addItem(project, state, contentNodeId, fields) {
   const existingProjectFieldKeys = Object.keys(fields).filter(
     (key) => !nonExistingProjectFields.includes(key)
   );
+  console.log('here2')
 
   if (existingProjectFieldKeys.length === 0)
     return {
@@ -11597,8 +11605,11 @@ async function addItem(project, state, contentNodeId, fields) {
   const existingFields = Object.fromEntries(
     existingProjectFieldKeys.map((key) => [key, fields[key]])
   );
-
+  console.log('here3')
+  
   const result = getFieldsUpdateQueryAndFields(stateWithFields, existingFields);
+  // console.log(result.query)
+
 
   await project.octokit.graphql(result.query, {
     projectId: stateWithFields.id,
@@ -12291,22 +12302,8 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
-    const {
-      pull_request: event,
-      repository: { html_url },
-    } = github.context.payload;
-    const { number: prNumber } = event;
-    const octokit = github.getOctokit(token);
-
-    core.info(html_url, prNumber);
-    const { data: pullRequest } = await octokit.rest.pulls.get({
-      owner,
-      repo: html_url,
-      pull_number: prNumber,
-    });
-
-    core.info(JSON.stringify(pullRequest));
-    throw "s";
+    const { pull_request: event } = github.context.payload;
+    const { node_id } = event;
 
     const project = new GitHubProject({
       owner,
@@ -12332,7 +12329,9 @@ const run = async () => {
         ? currentIterationTitle
         : nextIterationTitle;
 
-    await project.items.add(node_id, { iteration: iterationTitle });
+    await project.items.add(node_id, {
+      iteration: iterationTitle,
+    });
   } catch (error) {
     core.setFailed(error.message);
   }

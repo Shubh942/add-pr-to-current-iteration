@@ -10,22 +10,8 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
 
-    const {
-      pull_request: event,
-      repository: { html_url },
-    } = github.context.payload;
-    const { number: prNumber } = event;
-    const octokit = github.getOctokit(token);
-
-    core.info(html_url, prNumber);
-    const { data: pullRequest } = await octokit.rest.pulls.get({
-      owner,
-      repo: html_url,
-      pull_number: prNumber,
-    });
-
-    core.info(JSON.stringify(pullRequest));
-    throw "s";
+    const { pull_request: event } = github.context.payload;
+    const { node_id } = event;
 
     const project = new GitHubProject({
       owner,
@@ -51,7 +37,9 @@ const run = async () => {
         ? currentIterationTitle
         : nextIterationTitle;
 
-    await project.items.add(node_id, { iteration: iterationTitle });
+    await project.items.add(node_id, {
+      iteration: iterationTitle,
+    });
   } catch (error) {
     core.setFailed(error.message);
   }
