@@ -20,6 +20,9 @@ inputs:
   new-iteration:
     description: Should be current or next.
     required: true
+  is-issue:
+    description: Should be true or false.
+    required: false
 runs:
   using: "node16"
   main: "dist/index.js"

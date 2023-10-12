@@ -9,9 +9,7 @@ const run = async () => {
     const token = core.getInput("token");
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
-
-    const { pull_request: event } = github.context.payload;
-    const { node_id } = event;
+    const isIssue = core.getInput("is-issue");
 
     const project = new GitHubProject({
       owner,
@@ -31,6 +29,19 @@ const run = async () => {
     const nextIterationTitle = iterationTitles
       .filter((i) => i !== currentIterationTitle)
       .reduce((a, b) => (a < b ? a : b));
+
+    if (isIssue) {
+      const { issue } = github.context.payload;
+      const { node_id, labels } = issue;
+      if (labels.find((l) => l.name.toLowerCase() === "current")) {
+        // add to current iteration
+        await project.items.add(node_id, {
+          iteration: currentIterationTitle,
+        });
+      }
+    }
+    const { pull_request: event } = github.context.payload;
+    const { node_id } = event;
 
     const iterationTitle =
       newiterationType === "current"
