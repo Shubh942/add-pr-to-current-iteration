@@ -39,6 +39,7 @@ const run = async () => {
           iteration: currentIterationTitle,
         });
       }
+      return;
     }
     const { pull_request: event } = github.context.payload;
     const { node_id } = event;
