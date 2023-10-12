@@ -32,6 +32,7 @@ const run = async () => {
 
     if (isIssue) {
       const { issue } = github.context.payload;
+      console.log(JSON.stringify(issue));
       const { node_id, labels } = issue;
       if (labels.find((l) => l.name.toLowerCase() === "current")) {
         // add to current iteration
