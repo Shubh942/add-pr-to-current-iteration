@@ -49,7 +49,7 @@ const run = async () => {
     const { node_id } = event;
 
     const iterationTitle = !nextIterationTitle
-      ? "current"
+      ? currentIterationTitle
       : newiterationType === "current"
       ? currentIterationTitle
       : nextIterationTitle;
