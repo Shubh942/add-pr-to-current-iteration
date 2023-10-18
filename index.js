@@ -26,9 +26,13 @@ const run = async () => {
       a < b ? a : b
     );
 
-    const nextIterationTitle = iterationTitles
-      .filter((i) => i !== currentIterationTitle)
-      .reduce((a, b) => (a < b ? a : b));
+    let nextIterationTitle = "";
+
+    if (iterationTitles.length > 1) {
+      nextIterationTitle = iterationTitles
+        .filter((i) => i !== currentIterationTitle)
+        .reduce((a, b) => (a < b ? a : b));
+    }
 
     if (isIssue) {
       const { issue } = github.context.payload;
@@ -44,10 +48,11 @@ const run = async () => {
     const { pull_request: event } = github.context.payload;
     const { node_id } = event;
 
-    const iterationTitle =
-      newiterationType === "current"
-        ? currentIterationTitle
-        : nextIterationTitle;
+    const iterationTitle = !nextIterationTitle
+      ? "current"
+      : newiterationType === "current"
+      ? currentIterationTitle
+      : nextIterationTitle;
 
     await project.items.add(node_id, {
       iteration: iterationTitle,
