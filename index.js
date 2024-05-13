@@ -9,7 +9,7 @@ const run = async () => {
     const token = core.getInput("token");
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
-    const isIssue = core.getInput("is-issue");
+    const isIssue = true;
 
     const project = new GitHubProject({
       owner,
@@ -17,6 +17,7 @@ const run = async () => {
       token,
       fields: { iteration: iterationField },
     });
+    console.log(project);
 
     const projectData = await project.getProperties();
     const iterations = projectData.fields.iteration.optionsByValue;
