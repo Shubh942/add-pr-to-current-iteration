@@ -35,7 +35,7 @@ const run = async () => {
         .reduce((a, b) => (a < b ? a : b));
     }
 
-    const { issue } = github.context.payload;
+    const { issue } = context.payload;
     const { node_id, labels } = issue;
     
       // add to current iteration
