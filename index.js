@@ -17,9 +17,9 @@ const run = async () => {
       token,
       fields: { iteration: iterationField },
     });
-    console.log(project);
 
     const projectData = await project.getProperties();
+    console.log(projectData);
     const iterations = projectData.fields.iteration.optionsByValue;
 
     const iterationTitles = Object.keys(iterations);
@@ -35,29 +35,14 @@ const run = async () => {
         .reduce((a, b) => (a < b ? a : b));
     }
 
-    if (isIssue) {
-      const { issue } = github.context.payload;
-      const { node_id, labels } = issue;
-      if (labels.find((l) => l.name.toLowerCase() === "current")) {
-        // add to current iteration
-        await project.items.add(node_id, {
-          iteration: currentIterationTitle,
-        });
-      }
-      return;
-    }
-    const { pull_request: event } = github.context.payload;
-    const { node_id } = event;
-
-    const iterationTitle = !nextIterationTitle
-      ? currentIterationTitle
-      : newiterationType === "current"
-      ? currentIterationTitle
-      : nextIterationTitle;
-
-    await project.items.add(node_id, {
-      iteration: iterationTitle,
-    });
+    const { issue } = github.context.payload;
+    const { node_id, labels } = issue;
+    
+      // add to current iteration
+      await project.items.add(node_id, {
+        iteration: currentIterationTitle,
+      });
+    
   } catch (error) {
     core.setFailed(error.message);
   }
