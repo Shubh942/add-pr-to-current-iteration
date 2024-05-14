@@ -12379,7 +12379,7 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
     const isIssue = true;
-    console.log(id);
+    console.log("id:", id);
     const project = new GitHubProject({
       owner,
       number,
