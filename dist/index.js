@@ -12379,7 +12379,7 @@ const run = async () => {
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
     const isIssue = true;
-
+    console.log(id);
     const project = new GitHubProject({
       owner,
       number,
@@ -12405,13 +12405,12 @@ const run = async () => {
     }
 
     //const { issue } = context.payload;
-    const node_id=id;
-    
-      // add to current iteration
-      await project.items.add(node_id, {
-        iteration: currentIterationTitle,
-      });
-    
+    const node_id = id;
+
+    // add to current iteration
+    await project.items.add(node_id, {
+      iteration: currentIterationTitle,
+    });
   } catch (error) {
     core.setFailed(error.message);
   }
