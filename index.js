@@ -44,7 +44,7 @@ const run = async () => {
           const itr = element.fields.iteration;
           const node_id = element.content.id;
           const time =
-            new Date(iterations[itr].startDate).getTime() +
+            new Date(iterations[itr].startDate()).getTime() +
             14 * 24 * 60 * 60 * 1000;
           const current = Date.now();
           if (time < current) {
