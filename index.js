@@ -40,7 +40,10 @@ const run = async () => {
       const data = await project.items.list();
       // console.log(data);
       for (const element of data) {
-        if (element.fields.iteration != null) {
+        if (
+          element.fields.iteration != null &&
+          iterations[element.fields.iteration] != null
+        ) {
           const itr = element.fields.iteration;
           const node_id = element.content.id;
           const time =
@@ -54,6 +57,22 @@ const run = async () => {
               : newiterationType === "current"
               ? currentIterationTitle
               : nextIterationTitle;
+            await project.items.add(node_id, {
+              iteration: iterationTitle,
+            });
+          } else {
+            const id = github.context.payload.issue.node_id;
+            const iterationTitle = !nextIterationTitle
+              ? currentIterationTitle
+              : newiterationType === "current"
+              ? currentIterationTitle
+              : nextIterationTitle;
+
+            //const { issue } = context.payload;
+
+            const node_id = id;
+
+            // add to current iteration
             await project.items.add(node_id, {
               iteration: iterationTitle,
             });
