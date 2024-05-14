@@ -47,8 +47,8 @@ const run = async () => {
             new Date(iterations[itr].startDate).getTime() +
             14 * 24 * 60 * 60 * 1000;
           const current = Date.now();
-          console.log(node_id, itr);
           if (time < current) {
+            console.log(node_id, itr);
             const iterationTitle = !nextIterationTitle
               ? currentIterationTitle
               : newiterationType === "current"
