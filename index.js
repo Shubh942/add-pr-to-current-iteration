@@ -8,11 +8,11 @@ const run = async () => {
     const number = Number(core.getInput("number"));
     const token = core.getInput("token");
     // const id = github.event.issue.node_id;
-    console.log(github.context.payload);
+    const id = github.context.payload.issue.node_id;
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
     const isIssue = true;
-    // console.log("id:", id);
+    console.log("id:", id);
     const project = new GitHubProject({
       owner,
       number,
@@ -39,7 +39,7 @@ const run = async () => {
 
     //const { issue } = context.payload;
 
-    const node_id = "1";
+    const node_id = id;
 
     // add to current iteration
     await project.items.add(node_id, {
