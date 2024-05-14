@@ -7,7 +7,7 @@ const run = async () => {
     const owner = core.getInput("owner");
     const number = Number(core.getInput("number"));
     const token = core.getInput("token");
-    const id = core.getInput("node_id");
+    const id = github.event.issue.node_id;
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
     const isIssue = true;
