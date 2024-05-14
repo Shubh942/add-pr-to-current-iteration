@@ -38,20 +38,43 @@ const run = async () => {
     }
     if (newiterationType == "next") {
       const data = await project.items.list();
-      // console.log("data:", data);
+      console.log("data:", data);
+
       for (const element of data) {
         if (
-          element.fields.iteration != null &&
-          iterations[element.fields.iteration] != null
+          element.fields.status == "Todo" ||
+          element.fields.status == "In Progress" ||
+          element.fields.status == "Planned" ||
+          element.fields.status == "In Review"
         ) {
-          const itr = element.fields.iteration;
-          const node_id = element.content.id;
-          console.log("value: ", iterations[itr]);
-          const startTime = new Date(iterations[itr].startDate).getTime();
-          const time =
-            startTime + iterations[itr].duration * 24 * 60 * 60 * 1000;
-          const current = Date.now();
-          if (time < current) {
+          if (
+            element.fields.iteration != null &&
+            iterations[element.fields.iteration] != null
+          ) {
+            const itr = element.fields.iteration;
+            const node_id = element.content.id;
+            // console.log("value: ", iterations[itr]);
+            const startTime = new Date(iterations[itr].startDate).getTime();
+            const time =
+              startTime + iterations[itr].duration * 24 * 60 * 60 * 1000;
+            const current = Date.now();
+            if (time < current) {
+              newiterationType = "current";
+              const iterationTitle = !nextIterationTitle
+                ? currentIterationTitle
+                : newiterationType === "current"
+                ? currentIterationTitle
+                : nextIterationTitle;
+
+              //const { issue } = context.payload;
+
+              // add to current iteration
+              await project.items.add(node_id, {
+                iteration: iterationTitle,
+              });
+            }
+          } else {
+            const id = element.content.id;
             newiterationType = "current";
             const iterationTitle = !nextIterationTitle
               ? currentIterationTitle
@@ -61,28 +84,13 @@ const run = async () => {
 
             //const { issue } = context.payload;
 
+            const node_id = id;
+
             // add to current iteration
             await project.items.add(node_id, {
               iteration: iterationTitle,
             });
           }
-        } else {
-          const id = element.content.id;
-          newiterationType = "current";
-          const iterationTitle = !nextIterationTitle
-            ? currentIterationTitle
-            : newiterationType === "current"
-            ? currentIterationTitle
-            : nextIterationTitle;
-
-          //const { issue } = context.payload;
-
-          const node_id = id;
-
-          // add to current iteration
-          await project.items.add(node_id, {
-            iteration: iterationTitle,
-          });
         }
       }
       return;
