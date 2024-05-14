@@ -12376,6 +12376,7 @@ const run = async () => {
     const number = Number(core.getInput("number"));
     const token = core.getInput("token");
     // const id = github.event.issue.node_id;
+
     const id = github.context.payload.issue.node_id;
     const iterationField = core.getInput("iteration-field"); // name of the iteration field
     const newiterationType = core.getInput("new-iteration"); // current or next
@@ -12404,6 +12405,11 @@ const run = async () => {
         .filter((i) => i !== currentIterationTitle)
         .reduce((a, b) => (a < b ? a : b));
     }
+    const iterationTitle = !nextIterationTitle
+      ? currentIterationTitle
+      : newiterationType === "current"
+      ? currentIterationTitle
+      : nextIterationTitle;
 
     //const { issue } = context.payload;
 
@@ -12411,7 +12417,7 @@ const run = async () => {
 
     // add to current iteration
     await project.items.add(node_id, {
-      iteration: currentIterationTitle,
+      iteration: iterationTitle,
     });
   } catch (error) {
     core.setFailed(error.message);
