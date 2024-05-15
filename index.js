@@ -41,12 +41,7 @@ const run = async () => {
       console.log("data:", data);
 
       for (const element of data) {
-        if (
-          element.fields.status == "Todo" ||
-          element.fields.status == "In Progress" ||
-          element.fields.status == "Planned" ||
-          element.fields.status == "In Review"
-        ) {
+        if (element.fields.status == "Todo") {
           if (
             element.fields.iteration != null &&
             iterations[element.fields.iteration] != null
