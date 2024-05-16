@@ -6,8 +6,7 @@
   "scripts": {
     "build": "ncc build index.js"
   },
-  "author": "Baptiste Lombard",
-  "license": "MIT",
+  "author": "Fcbtech",
   "type": "module",
   "dependencies": {
     "@actions/core": "^1.10.0",
